@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import { AuthService } from '../../services/auth.service';
 
 // @ts-ignore
@@ -20,6 +21,17 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  const handleVisitorAccess = () => {
+    // Navigate to the 'AppTabs' screen which is defined in the RootNavigator
+    // We use dispatch with reset to clear the history so the user can't go back to login
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'AppTabs' }],
+      })
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to R Community</Text>
@@ -37,7 +49,7 @@ const LoginScreen = ({ navigation }) => {
       <Button title="Get OTP" onPress={handleLogin} />
 
       <View style={styles.footer}>
-        <Text style={styles.link} onPress={() => navigation.replace('AppTabs')}>
+        <Text style={styles.link} onPress={handleVisitorAccess}>
           Continue as Visitor
         </Text>
       </View>

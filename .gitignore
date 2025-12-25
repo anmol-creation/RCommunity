@@ -1,8 +1,28 @@
+# Node.js
 node_modules/
-**/node_modules/
-dist/
-**/dist/
-.env
-.DS_Store
-coverage/
 npm-debug.log
+yarn-error.log
+
+# React Native
+.expo/
+web-build/
+dist/
+
+# Android
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+*.apk
+
+# iOS
+mobile/ios/Pods/
+mobile/ios/build/
+*.ipa
+*.xcworkspace
+*.xcuserdatad
+
+# System
+.DS_Store
+.env
+coverage/
