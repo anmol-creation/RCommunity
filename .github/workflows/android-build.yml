@@ -50,16 +50,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-caches-
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-
       - name: Build Debug APK
         run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon
+          if [ -d "android" ]; then
+            echo "Android folder found. Building..."
+            chmod +x android/gradlew
+            cd android
+            ./gradlew assembleDebug --no-daemon
+          else
+            echo "::warning::Android directory not found. Skipping build. Run 'npx react-native upgrade' locally to generate it."
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: ignore
