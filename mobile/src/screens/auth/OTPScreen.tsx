@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import { AuthService } from '../../services/auth.service';
 
 // @ts-ignore
@@ -16,11 +17,14 @@ const OTPScreen = ({ route, navigation }) => {
     try {
       const response = await AuthService.verifyOTP(phoneNumber, otp);
       if (response.success) {
-        // TODO: Save token to secure storage
-        navigation.reset({
+        // Successful login, navigate to the main App Tabs
+        // Reset the navigation state to ensure the user can't go back to the OTP screen
+        navigation.dispatch(
+          CommonActions.reset({
             index: 0,
             routes: [{ name: 'AppTabs' }],
-          });
+          })
+        );
       } else {
         Alert.alert('Error', 'Invalid OTP');
       }
