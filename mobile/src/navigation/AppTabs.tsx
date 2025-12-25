@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FeedScreen from '../screens/home/FeedScreen';
+import VerificationScreen from '../screens/verification/VerificationScreen';
 import { View, Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
@@ -22,6 +23,7 @@ export const AppTabs = () => {
     >
       <Tab.Screen name="Home" component={FeedScreen} />
       <Tab.Screen name="Explore" component={ExploreScreen} />
+      <Tab.Screen name="Verify" component={VerificationScreen} options={{ tabBarLabel: 'Verify ID' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

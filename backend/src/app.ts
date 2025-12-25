@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes';
+import verificationRoutes from './modules/verification/verification.routes';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/verification', verificationRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
