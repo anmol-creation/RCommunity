@@ -24,7 +24,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '11'
-          cache: 'gradle'
+          # Removed 'cache: gradle' to prevent failure when android/ folder is missing
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
