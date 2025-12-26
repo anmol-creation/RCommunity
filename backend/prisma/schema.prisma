@@ -16,6 +16,12 @@ model User {
   displayName     String?
   role            Role     @default(USER)
   verificationStatus VerificationStatus @default(UNVERIFIED)
+
+  // Rider Profile Fields
+  vehicleType     VehicleType?
+  yearsExperience Int?     @default(0)
+  platforms       String[] // Array of platform names e.g. ["Zomato", "Swiggy"]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -81,4 +87,12 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum VehicleType {
+  BIKE
+  SCOOTER
+  CYCLE
+  EV_SCOOTER
+  OTHER
 }

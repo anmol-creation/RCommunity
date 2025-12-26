@@ -2,13 +2,13 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FeedScreen from '../screens/home/FeedScreen';
 import VerificationScreen from '../screens/verification/VerificationScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
 import { View, Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
 // Placeholder screens
 const ExploreScreen = () => <View style={{flex:1, backgroundColor:'#121212'}}><Text style={{color:'white'}}>Explore</Text></View>;
-const ProfileScreen = () => <View style={{flex:1, backgroundColor:'#121212'}}><Text style={{color:'white'}}>Profile</Text></View>;
 
 export const AppTabs = () => {
   return (

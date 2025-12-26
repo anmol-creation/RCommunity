@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes';
 import verificationRoutes from './modules/verification/verification.routes';
 import { feedRoutes } from './modules/feed/feed.routes';
+import { userRoutes } from './modules/user/user.routes';
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/verification', verificationRoutes);
 app.use('/feed', feedRoutes);
+app.use('/users', userRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
