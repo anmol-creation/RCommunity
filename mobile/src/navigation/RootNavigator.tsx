@@ -3,6 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthStack } from './AuthStack';
 import { AppTabs } from './AppTabs';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import CommentsScreen from '../screens/home/CommentsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +23,26 @@ export const RootNavigator = () => {
         name="CreatePost"
         component={CreatePostScreen}
         options={{ presentation: 'modal', headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{
+            headerShown: true,
+            title: 'Edit Profile',
+            headerStyle: { backgroundColor: '#1E1E1E' },
+            headerTintColor: '#FFF'
+        }}
+      />
+      <Stack.Screen
+        name="Comments"
+        component={CommentsScreen}
+        options={{
+            headerShown: true,
+            title: 'Comments',
+            headerStyle: { backgroundColor: '#1E1E1E' },
+            headerTintColor: '#FFF'
+        }}
       />
     </Stack.Navigator>
   );

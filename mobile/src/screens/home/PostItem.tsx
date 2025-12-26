@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { UserService } from '../../services/user.service';
 
 interface Author {
   id: string;
@@ -7,12 +8,14 @@ interface Author {
   verificationStatus: string;
 }
 
-interface Post {
+export interface Post {
   id: string;
   content: string;
   imageUrl?: string | null;
   createdAt: string;
   author: Author;
+  likedByMe?: boolean;
+  isFollowing?: boolean;
   _count: {
     likes: number;
     comments: number;
@@ -21,9 +24,22 @@ interface Post {
 
 interface PostItemProps {
   post: Post;
+  onLike?: (postId: string) => void;
+  onComment?: (post: Post) => void;
 }
 
-export const PostItem: React.FC<PostItemProps> = ({ post }) => {
+export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
+
+  // Simple local follow stub for now (Post doesn't update optimistic follow yet)
+  const handleFollow = async () => {
+      try {
+          await UserService.followUser(post.author.id);
+          Alert.alert('Success', `You are now following ${post.author.displayName}`);
+      } catch (e) {
+          Alert.alert('Error', 'Could not follow user (or already following)');
+      }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -37,7 +53,13 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
             </Text>
           </View>
         </View>
-        <Text style={styles.timeAgo}>Just now</Text>
+
+        {/* Follow Button (if not following and verified) */}
+        {!post.isFollowing && post.author.verificationStatus === 'VERIFIED' && (
+            <TouchableOpacity onPress={handleFollow} style={styles.followButton}>
+                <Text style={styles.followText}>+ Follow</Text>
+            </TouchableOpacity>
+        )}
       </View>
 
       {/* Content */}
@@ -51,12 +73,16 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
 
       {/* Footer (Interactions) */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>👍 {post._count.likes}</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={() => onLike && onLike(post.id)}>
+          <Text style={[styles.actionText, post.likedByMe && styles.likedText]}>
+             {post.likedByMe ? '👍 Liked' : '👍 Like'} {post._count.likes}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>💬 {post._count.comments}</Text>
+
+        <TouchableOpacity style={styles.actionButton} onPress={() => onComment && onComment(post)}>
+          <Text style={styles.actionText}>💬 Comment {post._count.comments}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
@@ -105,6 +131,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+  followButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderWidth: 1,
+      borderColor: '#4FA5F5',
+      borderRadius: 15,
+  },
+  followText: {
+      color: '#4FA5F5',
+      fontSize: 12,
+      fontWeight: 'bold',
+  },
   timeAgo: {
     color: '#888',
     fontSize: 12,
@@ -133,10 +171,15 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 5,
   },
   actionText: {
     color: '#BBB',
     fontSize: 14,
     marginLeft: 5,
   },
+  likedText: {
+      color: '#4DB6AC',
+      fontWeight: 'bold',
+  }
 });

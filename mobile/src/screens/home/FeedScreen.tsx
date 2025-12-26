@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FeedService } from '../../services/feed.service';
 import { AuthService } from '../../services/auth.service';
-import { PostItem } from './PostItem';
+import { PostItem, Post } from './PostItem';
 
 const FeedScreen = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [sortBy, setSortBy] = useState<'latest' | 'trending'>('latest');
   const navigation = useNavigation();
 
   // Load user data on focus (in case login status changes)
@@ -18,9 +19,12 @@ const FeedScreen = () => {
     }, [])
   );
 
-  useEffect(() => {
-    fetchFeed();
-  }, []);
+  // Reload feed on focus or sort change
+  useFocusEffect(
+      useCallback(() => {
+        fetchFeed();
+      }, [sortBy])
+  );
 
   const loadUser = async () => {
     const currentUser = await AuthService.getCurrentUser();
@@ -30,10 +34,10 @@ const FeedScreen = () => {
   const fetchFeed = async () => {
     try {
       setLoading(true);
-      const data = await FeedService.getFeed();
+      const data = await FeedService.getFeed(1, sortBy);
       setPosts(data);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load feed');
+      console.log('Error loading feed', error);
     } finally {
       setLoading(false);
     }
@@ -45,7 +49,6 @@ const FeedScreen = () => {
       return;
     }
 
-    // We check locally, but backend also enforces it.
     if (user.verificationStatus !== 'VERIFIED') {
         Alert.alert('Verification Required', 'Only verified riders can post.');
         return;
@@ -54,13 +57,42 @@ const FeedScreen = () => {
     navigation.navigate('CreatePost');
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#4DB6AC" />
-      </View>
+  const handleLike = async (postId: string) => {
+    if (!user || user.verificationStatus !== 'VERIFIED') {
+        Alert.alert('Restricted', 'Only verified riders can like posts.');
+        return;
+    }
+
+    // Optimistic Update
+    setPosts(currentPosts =>
+        currentPosts.map(p => {
+            if (p.id === postId) {
+                const wasLiked = p.likedByMe;
+                return {
+                    ...p,
+                    likedByMe: !wasLiked,
+                    _count: {
+                        ...p._count,
+                        likes: wasLiked ? p._count.likes - 1 : p._count.likes + 1
+                    }
+                };
+            }
+            return p;
+        })
     );
-  }
+
+    try {
+        await FeedService.toggleLike(postId);
+    } catch (error) {
+        // Revert on error
+        fetchFeed();
+        Alert.alert('Error', 'Failed to update like');
+    }
+  };
+
+  const handleComment = (post: Post) => {
+      navigation.navigate('Comments', { postId: post.id });
+  };
 
   const canPost = user?.verificationStatus === 'VERIFIED';
 
@@ -78,19 +110,46 @@ const FeedScreen = () => {
          )}
       </View>
 
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PostItem post={item} />}
-        contentContainerStyle={styles.listContent}
-        refreshing={loading}
-        onRefresh={fetchFeed}
-        ListEmptyComponent={
-            <View style={styles.center}>
-                <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
-            </View>
-        }
-      />
+      <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, sortBy === 'latest' && styles.activeTab]}
+            onPress={() => setSortBy('latest')}
+          >
+              <Text style={[styles.tabText, sortBy === 'latest' && styles.activeTabText]}>Latest</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, sortBy === 'trending' && styles.activeTab]}
+            onPress={() => setSortBy('trending')}
+          >
+              <Text style={[styles.tabText, sortBy === 'trending' && styles.activeTabText]}>Trending</Text>
+          </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.center}>
+            <ActivityIndicator size="large" color="#4DB6AC" />
+        </View>
+      ) : (
+        <FlatList
+            data={posts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+                <PostItem
+                    post={item}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                />
+            )}
+            contentContainerStyle={styles.listContent}
+            refreshing={loading}
+            onRefresh={fetchFeed}
+            ListEmptyComponent={
+                <View style={styles.center}>
+                    <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
+                </View>
+            }
+        />
+      )}
 
       {/* Floating Action Button for Posting - Only show if verified */}
       {canPost && (
@@ -136,6 +195,28 @@ const styles = StyleSheet.create({
   userStatus: {
       fontSize: 10,
       fontWeight: 'bold',
+  },
+  tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: '#1E1E1E',
+      borderBottomWidth: 1,
+      borderBottomColor: '#333',
+  },
+  tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+  },
+  activeTab: {
+      borderBottomWidth: 2,
+      borderBottomColor: '#4DB6AC',
+  },
+  tabText: {
+      color: '#888',
+      fontWeight: 'bold',
+  },
+  activeTabText: {
+      color: '#4DB6AC',
   },
   listContent: {
     padding: 10,

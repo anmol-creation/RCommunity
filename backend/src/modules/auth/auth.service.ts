@@ -1,11 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../utils/prisma';
 
 export class AuthService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
 
   async requestOTP(phoneNumber: string) {
     // TODO: Integrate with SMS provider (e.g., Twilio, MSG91)
@@ -21,12 +16,12 @@ export class AuthService {
     if (otp === '123456') {
 
       // Ensure user exists in DB
-      let user = await this.prisma.user.findUnique({
+      let user = await prisma.user.findUnique({
         where: { phoneNumber }
       });
 
       if (!user) {
-        user = await this.prisma.user.create({
+        user = await prisma.user.create({
           data: {
             phoneNumber,
             verificationStatus: 'UNVERIFIED',

@@ -16,6 +16,12 @@ model User {
   displayName     String?
   role            Role     @default(USER)
   verificationStatus VerificationStatus @default(UNVERIFIED)
+
+  // Rider Profile Fields
+  vehicleType     VehicleType?
+  yearsExperience Int?     @default(0)
+  platforms       String[] // Array of platform names e.g. ["Zomato", "Swiggy"]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -23,6 +29,19 @@ model User {
   comments        Comment[]
   likes           Like[]
   verificationRequest VerificationRequest?
+
+  followedBy      Follow[] @relation("following")
+  following       Follow[] @relation("follower")
+}
+
+model Follow {
+  followerId  String
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followingId String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
 }
 
 model Post {
@@ -81,4 +100,12 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum VehicleType {
+  BIKE
+  SCOOTER
+  CYCLE
+  EV_SCOOTER
+  OTHER
 }
