@@ -128,6 +128,10 @@ const ProfileScreen = () => {
           </View>
       </View>
 
+      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('Guidelines')}>
+          <Text style={styles.linkText}>Community Guidelines</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -295,6 +299,18 @@ const styles = StyleSheet.create({
   },
   logoutText: {
       color: '#FFF',
+      fontWeight: 'bold',
+  },
+  linkButton: {
+      marginHorizontal: 20,
+      marginVertical: 10,
+      padding: 15,
+      backgroundColor: '#333',
+      borderRadius: 8,
+      alignItems: 'center',
+  },
+  linkText: {
+      color: '#4FA5F5',
       fontWeight: 'bold',
   },
 });

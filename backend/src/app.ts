@@ -5,6 +5,7 @@ import authRoutes from './modules/auth/auth.routes';
 import verificationRoutes from './modules/verification/verification.routes';
 import { feedRoutes } from './modules/feed/feed.routes';
 import { userRoutes } from './modules/user/user.routes';
+import { reportRoutes } from './modules/report/report.routes';
 import path from 'path';
 
 const app = express();
@@ -23,6 +24,7 @@ app.use('/auth', authRoutes);
 app.use('/verification', verificationRoutes);
 app.use('/feed', feedRoutes);
 app.use('/users', userRoutes);
+app.use('/reports', reportRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
