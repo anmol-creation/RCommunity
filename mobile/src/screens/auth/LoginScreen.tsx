@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 import { AuthService } from '../../services/auth.service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // @ts-ignore
 const LoginScreen = ({ navigation }) => {
@@ -21,7 +22,10 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const handleVisitorAccess = () => {
+  const handleVisitorAccess = async () => {
+    // Clear any existing session to ensure we are truly a visitor
+    await AuthService.logout();
+
     // Navigate to the 'AppTabs' screen which is defined in the RootNavigator
     // We use dispatch with reset to clear the history so the user can't go back to login
     navigation.dispatch(
