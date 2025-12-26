@@ -1,7 +1,12 @@
-// Placeholder for Authentication Module
-// Handles: OTP Login, Session Management, Device Binding
+import { PrismaClient } from '@prisma/client';
 
 export class AuthService {
+  private prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = new PrismaClient();
+  }
+
   async requestOTP(phoneNumber: string) {
     // TODO: Integrate with SMS provider (e.g., Twilio, MSG91)
     console.log(`[STUB] OTP requested for: ${phoneNumber}`);
@@ -14,14 +19,29 @@ export class AuthService {
     console.log(`[STUB] Verifying OTP ${otp} for ${phoneNumber}`);
 
     if (otp === '123456') {
-      // Mock User and Token
+
+      // Ensure user exists in DB
+      let user = await this.prisma.user.findUnique({
+        where: { phoneNumber }
+      });
+
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            phoneNumber,
+            verificationStatus: 'UNVERIFIED',
+            role: 'USER'
+          }
+        });
+      }
+
       return {
         success: true,
         token: 'mock-jwt-token',
         user: {
-          id: 'user-123',
-          phoneNumber,
-          status: 'UNVERIFIED' // Aligned with Prisma Enum
+          id: user.id,
+          phoneNumber: user.phoneNumber,
+          status: user.verificationStatus
         }
       };
     }
