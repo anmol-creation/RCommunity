@@ -5,6 +5,7 @@ import authRoutes from './modules/auth/auth.routes';
 import verificationRoutes from './modules/verification/verification.routes';
 import { feedRoutes } from './modules/feed/feed.routes';
 import { userRoutes } from './modules/user/user.routes';
+import path from 'path';
 
 const app = express();
 
@@ -12,6 +13,10 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Serve static files (uploads)
+// In production, use Nginx or S3
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/auth', authRoutes);

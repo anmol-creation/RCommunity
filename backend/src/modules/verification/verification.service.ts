@@ -1,27 +1,70 @@
-// Placeholder for Verification Module
-// Handles: Screenshot upload, Status tracking
+import prisma from '../../utils/prisma';
 
 export class VerificationService {
-  async uploadProof(userId: string, imageBase64: string) {
-    // TODO: Upload image to S3 (using mock for now)
-    // TODO: Create VerificationRequest in DB
 
-    console.log(`[STUB] Received verification proof for User: ${userId}`);
-    console.log(`[STUB] Image data length: ${imageBase64.length}`);
+  async createRequest(userId: string, filename: string) {
+    // Check if pending request exists
+    const existing = await prisma.verificationRequest.findUnique({
+      where: { userId }
+    });
 
-    // Mock processing delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Construct local URL
+    const imageUrl = `/uploads/${filename}`;
 
-    return {
-      success: true,
-      message: 'Verification proof uploaded successfully. Pending review.',
-      requestId: 'req-' + Math.floor(Math.random() * 10000)
-    };
+    if (existing) {
+        // Update existing request
+        return await prisma.verificationRequest.update({
+            where: { userId },
+            data: {
+                imageUrl,
+                status: 'PENDING',
+                adminNote: null,
+                updatedAt: new Date()
+            }
+        });
+    }
+
+    // Create new
+    return await prisma.verificationRequest.create({
+        data: {
+            userId,
+            imageUrl,
+            status: 'PENDING'
+        }
+    });
   }
 
-  async checkStatus(userId: string) {
-    // TODO: Check DB
-    console.log(`[STUB] Checking status for ${userId}`);
-    return 'PENDING';
+  async getStatus(userId: string) {
+      const req = await prisma.verificationRequest.findUnique({
+          where: { userId }
+      });
+      return req; // Can be null
+  }
+
+  // Admin function to approve/reject
+  async reviewRequest(requestId: string, status: 'VERIFIED' | 'REJECTED', note?: string) {
+      const request = await prisma.verificationRequest.update({
+          where: { id: requestId },
+          data: {
+              status,
+              adminNote: note
+          },
+          include: { user: true }
+      });
+
+      // Sync user status
+      if (status === 'VERIFIED') {
+          await prisma.user.update({
+              where: { id: request.userId },
+              data: { verificationStatus: 'VERIFIED' }
+          });
+      } else if (status === 'REJECTED') {
+         await prisma.user.update({
+              where: { id: request.userId },
+              data: { verificationStatus: 'UNVERIFIED' } // Reset to unverified
+          });
+      }
+
+      return request;
   }
 }

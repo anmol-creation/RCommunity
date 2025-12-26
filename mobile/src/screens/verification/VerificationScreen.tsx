@@ -1,29 +1,77 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Alert, Image, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Button, StyleSheet, Alert, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { VerificationService } from '../../services/verification.service';
+import { AuthService } from '../../services/auth.service';
 
 const VerificationScreen = () => {
   const [status, setStatus] = useState('UNVERIFIED');
-  // Mock User ID for this session
-  const userId = 'user-123';
+  const [loading, setLoading] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useFocusEffect(
+      useCallback(() => {
+          checkStatus();
+      }, [])
+  );
+
+  const checkStatus = async () => {
+      try {
+          const user = await AuthService.getCurrentUser();
+          setCurrentUser(user);
+          if (user) setStatus(user.verificationStatus);
+
+          const req = await VerificationService.getStatus();
+          if (req) {
+             setStatus(req.status);
+             setRequestId(req.id);
+          }
+      } catch (e) {}
+  };
 
   const handleUpload = async () => {
-    // In a real app, we would use react-native-image-picker here.
-    // For this stub, we send a dummy base64 string.
-    const mockImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-
     try {
-      Alert.alert('Uploading...', 'Please wait while we verify your ID.');
-      const response = await VerificationService.uploadProof(userId, mockImage);
+      setLoading(true);
 
-      if (response.success) {
-        setStatus('PENDING');
-        Alert.alert('Success', 'Verification submitted! We will notify you once approved.');
-      }
+      // Try simulation upload first for this environment
+      await VerificationService.uploadSimulation();
+
+      Alert.alert('Success', 'Verification submitted! We will notify you once approved.');
+      checkStatus(); // Refresh status
     } catch (error) {
-      Alert.alert('Error', 'Failed to upload verification proof.');
+      Alert.alert('Error', 'Failed to upload verification request.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleSimulateAdminApproval = async () => {
+      if (!requestId) return;
+      setLoading(true);
+      await VerificationService.debugApprove(requestId);
+      Alert.alert('Admin Action', 'Request Approved via Simulation!');
+
+      // Update local user session to reflect verified status
+      if (currentUser) {
+          currentUser.verificationStatus = 'VERIFIED';
+          // Save back to storage
+          const Async = require('@react-native-async-storage/async-storage').default;
+          await Async.setItem('user_data', JSON.stringify(currentUser));
+      }
+
+      await checkStatus();
+      setLoading(false);
+  };
+
+  if (status === 'VERIFIED') {
+      return (
+          <View style={styles.container}>
+              <Text style={styles.title}>✅ Verified Rider</Text>
+              <Text style={styles.text}>You have full access to R Community.</Text>
+          </View>
+      )
+  }
 
   if (status === 'PENDING') {
     return (
@@ -31,6 +79,11 @@ const VerificationScreen = () => {
         <Text style={styles.title}>Verification Pending</Text>
         <Text style={styles.text}>Your document is under review.</Text>
         <Text style={styles.text}>You can continue to use the app in Visitor mode.</Text>
+
+        {/* Debug Button for Demo */}
+        <TouchableOpacity style={styles.debugButton} onPress={handleSimulateAdminApproval}>
+            <Text style={styles.debugText}>[DEBUG] Simulate Admin Approval</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -50,7 +103,13 @@ const VerificationScreen = () => {
         <Text style={styles.instructionText}>4. Upload it here.</Text>
       </View>
 
-      <Button title="Select Screenshot & Upload" onPress={handleUpload} color="#4FA5F5" />
+      <TouchableOpacity style={styles.uploadButton} onPress={handleUpload} disabled={loading}>
+          {loading ? (
+              <ActivityIndicator color="#FFF" />
+          ) : (
+              <Text style={styles.uploadButtonText}>Simulate Screenshot Upload</Text>
+          )}
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -92,6 +151,30 @@ const styles = StyleSheet.create({
     color: '#bbb',
     marginBottom: 5,
     fontSize: 14,
+  },
+  uploadButton: {
+      backgroundColor: '#4FA5F5',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderRadius: 8,
+      width: '100%',
+      alignItems: 'center',
+  },
+  uploadButtonText: {
+      color: '#FFF',
+      fontWeight: 'bold',
+      fontSize: 16,
+  },
+  debugButton: {
+      marginTop: 40,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: '#FFAB40',
+      borderRadius: 5,
+  },
+  debugText: {
+      color: '#FFAB40',
+      fontFamily: 'monospace',
   }
 });
 
