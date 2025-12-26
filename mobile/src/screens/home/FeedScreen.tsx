@@ -10,6 +10,7 @@ const FeedScreen = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [sortBy, setSortBy] = useState<'latest' | 'trending'>('latest');
+  const [hashtag, setHashtag] = useState<string | undefined>(undefined);
   const navigation = useNavigation();
 
   // Load user data on focus (in case login status changes)
@@ -23,7 +24,7 @@ const FeedScreen = () => {
   useFocusEffect(
       useCallback(() => {
         fetchFeed();
-      }, [sortBy])
+      }, [sortBy, hashtag])
   );
 
   const loadUser = async () => {
@@ -34,7 +35,7 @@ const FeedScreen = () => {
   const fetchFeed = async () => {
     try {
       setLoading(true);
-      const data = await FeedService.getFeed(1, sortBy);
+      const data = await FeedService.getFeed(1, sortBy, hashtag);
       setPosts(data);
     } catch (error) {
       console.log('Error loading feed', error);
@@ -94,6 +95,14 @@ const FeedScreen = () => {
       navigation.navigate('Comments', { postId: post.id });
   };
 
+  const handleHashtagPress = (tag: string) => {
+      setHashtag(tag);
+      Alert.alert('Hashtag Filter', `Showing posts for #${tag}`, [
+          { text: 'Clear Filter', onPress: () => setHashtag(undefined) },
+          { text: 'OK' }
+      ]);
+  };
+
   const canPost = user?.verificationStatus === 'VERIFIED';
 
   return (
@@ -125,6 +134,15 @@ const FeedScreen = () => {
           </TouchableOpacity>
       </View>
 
+      {hashtag && (
+          <View style={styles.filterBanner}>
+              <Text style={styles.filterText}>Filtering by: #{hashtag}</Text>
+              <TouchableOpacity onPress={() => setHashtag(undefined)}>
+                  <Text style={styles.clearFilterText}>Clear</Text>
+              </TouchableOpacity>
+          </View>
+      )}
+
       {loading ? (
         <View style={styles.center}>
             <ActivityIndicator size="large" color="#4DB6AC" />
@@ -138,6 +156,7 @@ const FeedScreen = () => {
                     post={item}
                     onLike={handleLike}
                     onComment={handleComment}
+                    onHashtagPress={handleHashtagPress}
                 />
             )}
             contentContainerStyle={styles.listContent}
@@ -145,7 +164,7 @@ const FeedScreen = () => {
             onRefresh={fetchFeed}
             ListEmptyComponent={
                 <View style={styles.center}>
-                    <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
+                    <Text style={styles.emptyText}>No posts found.</Text>
                 </View>
             }
         />
@@ -247,6 +266,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: -2,
   },
+  filterBanner: {
+      backgroundColor: '#333',
+      padding: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+  },
+  filterText: {
+      color: '#4FA5F5',
+      fontWeight: 'bold',
+  },
+  clearFilterText: {
+      color: '#BBB',
+      textDecorationLine: 'underline',
+  }
 });
 
 export default FeedScreen;

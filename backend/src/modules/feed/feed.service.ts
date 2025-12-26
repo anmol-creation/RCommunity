@@ -2,7 +2,7 @@ import prisma from '../../utils/prisma';
 
 export class FeedService {
 
-  async getFeed(userId?: string, page: number = 1, limit: number = 20, sortBy: 'latest' | 'trending' = 'latest') {
+  async getFeed(userId?: string, page: number = 1, limit: number = 20, sortBy: 'latest' | 'trending' = 'latest', hashtag?: string) {
     const skip = (page - 1) * limit;
 
     // Sort logic
@@ -16,8 +16,17 @@ export class FeedService {
         };
     }
 
+    // Filter logic
+    let where: any = {};
+    if (hashtag) {
+        where.content = {
+            contains: `#${hashtag}` // Basic string search
+        };
+    }
+
     // Fetch posts
     const posts = await prisma.post.findMany({
+      where,
       skip,
       take: limit,
       orderBy: orderBy,

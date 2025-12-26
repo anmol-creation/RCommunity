@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { UserService } from '../../services/user.service';
+import { ReportService } from '../../services/report.service';
+import { HashtagParser } from '../../utils/HashtagParser';
 
 interface Author {
   id: string;
@@ -26,17 +29,39 @@ interface PostItemProps {
   post: Post;
   onLike?: (postId: string) => void;
   onComment?: (post: Post) => void;
+  onHashtagPress?: (tag: string) => void;
 }
 
-export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
+export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment, onHashtagPress }) => {
 
-  // Simple local follow stub for now (Post doesn't update optimistic follow yet)
   const handleFollow = async () => {
       try {
           await UserService.followUser(post.author.id);
           Alert.alert('Success', `You are now following ${post.author.displayName}`);
       } catch (e) {
           Alert.alert('Error', 'Could not follow user (or already following)');
+      }
+  };
+
+  const handleReport = () => {
+      Alert.alert(
+          'Report Post',
+          'Why are you reporting this post?',
+          [
+              { text: 'Spam', onPress: () => submitReport('Spam') },
+              { text: 'Harassment', onPress: () => submitReport('Harassment') },
+              { text: 'Inappropriate Content', onPress: () => submitReport('Inappropriate') },
+              { text: 'Cancel', style: 'cancel' }
+          ]
+      );
+  };
+
+  const submitReport = async (reason: string) => {
+      try {
+          await ReportService.createReport({ postId: post.id, reason });
+          Alert.alert('Thank You', 'We have received your report and will review it shortly.');
+      } catch (e) {
+          Alert.alert('Error', 'Failed to submit report.');
       }
   };
 
@@ -54,7 +79,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) =
           </View>
         </View>
 
-        {/* Follow Button (if not following and verified) */}
+        {/* Follow Button */}
         {!post.isFollowing && post.author.verificationStatus === 'VERIFIED' && (
             <TouchableOpacity onPress={handleFollow} style={styles.followButton}>
                 <Text style={styles.followText}>+ Follow</Text>
@@ -62,8 +87,12 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) =
         )}
       </View>
 
-      {/* Content */}
-      <Text style={styles.content}>{post.content}</Text>
+      {/* Content with Hashtags */}
+      <HashtagParser
+        text={post.content}
+        style={styles.content}
+        onHashtagPress={onHashtagPress}
+      />
 
       {post.imageUrl && (
         <View style={styles.imagePlaceholder}>
@@ -83,8 +112,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) =
           <Text style={styles.actionText}>💬 Comment {post._count.comments}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>Share</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={handleReport}>
+          <Text style={[styles.actionText, styles.reportText]}>🚩 Report</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -181,5 +210,9 @@ const styles = StyleSheet.create({
   likedText: {
       color: '#4DB6AC',
       fontWeight: 'bold',
+  },
+  reportText: {
+      color: '#C62828',
+      fontSize: 12
   }
 });

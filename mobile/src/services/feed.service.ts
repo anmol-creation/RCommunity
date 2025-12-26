@@ -1,9 +1,13 @@
 import api from './api';
 
 export const FeedService = {
-  getFeed: async (page: number = 1, sortBy: 'latest' | 'trending' = 'latest') => {
+  getFeed: async (page: number = 1, sortBy: 'latest' | 'trending' = 'latest', hashtag?: string) => {
     try {
-      const response = await api.get(`/feed?page=${page}&sortBy=${sortBy}`);
+      let url = `/feed?page=${page}&sortBy=${sortBy}`;
+      if (hashtag) {
+          url += `&hashtag=${encodeURIComponent(hashtag)}`;
+      }
+      const response = await api.get(url);
       return response.data.data;
     } catch (error) {
       console.error('FeedService getFeed error:', error);

@@ -5,6 +5,7 @@ import { AppTabs } from './AppTabs';
 import CreatePostScreen from '../screens/home/CreatePostScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import CommentsScreen from '../screens/home/CommentsScreen';
+import GuidelinesScreen from '../screens/profile/GuidelinesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,16 @@ export const RootNavigator = () => {
         options={{
             headerShown: true,
             title: 'Comments',
+            headerStyle: { backgroundColor: '#1E1E1E' },
+            headerTintColor: '#FFF'
+        }}
+      />
+      <Stack.Screen
+        name="Guidelines"
+        component={GuidelinesScreen}
+        options={{
+            headerShown: true,
+            title: 'Community Guidelines',
             headerStyle: { backgroundColor: '#1E1E1E' },
             headerTintColor: '#FFF'
         }}

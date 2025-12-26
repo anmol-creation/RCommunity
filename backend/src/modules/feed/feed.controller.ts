@@ -10,10 +10,11 @@ export class FeedController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const sortBy = (req.query.sortBy as 'latest' | 'trending') || 'latest';
+      const hashtag = req.query.hashtag as string;
 
       const userId = req.user?.id;
 
-      const posts = await feedService.getFeed(userId, page, limit, sortBy);
+      const posts = await feedService.getFeed(userId, page, limit, sortBy, hashtag);
       res.json({ success: true, data: posts });
     } catch (error) {
       console.error('Get Feed Error:', error);

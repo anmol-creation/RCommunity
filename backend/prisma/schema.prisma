@@ -29,6 +29,7 @@ model User {
   comments        Comment[]
   likes           Like[]
   verificationRequest VerificationRequest?
+  reports         Report[]
 
   followedBy      Follow[] @relation("following")
   following       Follow[] @relation("follower")
@@ -108,4 +109,25 @@ enum VehicleType {
   CYCLE
   EV_SCOOTER
   OTHER
+}
+
+model Report {
+  id              String   @id @default(uuid())
+  reporterId      String
+  reporter        User     @relation(fields: [reporterId], references: [id])
+
+  // Can report post or comment
+  postId          String?
+  commentId       String?
+
+  reason          String
+  status          ReportStatus @default(PENDING)
+
+  createdAt       DateTime @default(now())
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
 }
