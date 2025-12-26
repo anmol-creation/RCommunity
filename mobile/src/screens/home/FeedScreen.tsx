@@ -9,6 +9,7 @@ const FeedScreen = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [sortBy, setSortBy] = useState<'latest' | 'trending'>('latest');
   const navigation = useNavigation();
 
   // Load user data on focus (in case login status changes)
@@ -18,11 +19,11 @@ const FeedScreen = () => {
     }, [])
   );
 
-  // Reload feed on focus to get fresh likes/comments counts
+  // Reload feed on focus or sort change
   useFocusEffect(
       useCallback(() => {
         fetchFeed();
-      }, [])
+      }, [sortBy])
   );
 
   const loadUser = async () => {
@@ -32,9 +33,8 @@ const FeedScreen = () => {
 
   const fetchFeed = async () => {
     try {
-      // Don't set loading true on refresh to avoid flickering if we just want to update data
-      // setLoading(true);
-      const data = await FeedService.getFeed();
+      setLoading(true);
+      const data = await FeedService.getFeed(1, sortBy);
       setPosts(data);
     } catch (error) {
       console.log('Error loading feed', error);
@@ -94,14 +94,6 @@ const FeedScreen = () => {
       navigation.navigate('Comments', { postId: post.id });
   };
 
-  if (loading && posts.length === 0) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#4DB6AC" />
-      </View>
-    );
-  }
-
   const canPost = user?.verificationStatus === 'VERIFIED';
 
   return (
@@ -118,25 +110,46 @@ const FeedScreen = () => {
          )}
       </View>
 
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-            <PostItem
-                post={item}
-                onLike={handleLike}
-                onComment={handleComment}
-            />
-        )}
-        contentContainerStyle={styles.listContent}
-        refreshing={loading}
-        onRefresh={() => { setLoading(true); fetchFeed(); }}
-        ListEmptyComponent={
-            <View style={styles.center}>
-                <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
-            </View>
-        }
-      />
+      <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, sortBy === 'latest' && styles.activeTab]}
+            onPress={() => setSortBy('latest')}
+          >
+              <Text style={[styles.tabText, sortBy === 'latest' && styles.activeTabText]}>Latest</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, sortBy === 'trending' && styles.activeTab]}
+            onPress={() => setSortBy('trending')}
+          >
+              <Text style={[styles.tabText, sortBy === 'trending' && styles.activeTabText]}>Trending</Text>
+          </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.center}>
+            <ActivityIndicator size="large" color="#4DB6AC" />
+        </View>
+      ) : (
+        <FlatList
+            data={posts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+                <PostItem
+                    post={item}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                />
+            )}
+            contentContainerStyle={styles.listContent}
+            refreshing={loading}
+            onRefresh={fetchFeed}
+            ListEmptyComponent={
+                <View style={styles.center}>
+                    <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
+                </View>
+            }
+        />
+      )}
 
       {/* Floating Action Button for Posting - Only show if verified */}
       {canPost && (
@@ -182,6 +195,28 @@ const styles = StyleSheet.create({
   userStatus: {
       fontSize: 10,
       fontWeight: 'bold',
+  },
+  tabContainer: {
+      flexDirection: 'row',
+      backgroundColor: '#1E1E1E',
+      borderBottomWidth: 1,
+      borderBottomColor: '#333',
+  },
+  tab: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+  },
+  activeTab: {
+      borderBottomWidth: 2,
+      borderBottomColor: '#4DB6AC',
+  },
+  tabText: {
+      color: '#888',
+      fontWeight: 'bold',
+  },
+  activeTabText: {
+      color: '#4DB6AC',
   },
   listContent: {
     padding: 10,

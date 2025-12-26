@@ -29,5 +29,25 @@ export const UserService = {
       console.error('UserService getUserProfile error:', error);
       throw error;
     }
+  },
+
+  followUser: async (userId: string) => {
+      try {
+          const response = await api.post(`/users/${userId}/follow`);
+          return response.data;
+      } catch (error) {
+          console.error('Follow Error', error);
+          throw error;
+      }
+  },
+
+  unfollowUser: async (userId: string) => {
+      try {
+          const response = await api.delete(`/users/${userId}/follow`);
+          return response.data;
+      } catch (error) {
+          console.error('Unfollow Error', error);
+          throw error;
+      }
   }
 };

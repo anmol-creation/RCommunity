@@ -11,6 +11,8 @@ export class UserService {
           select: {
             posts: true,
             comments: true,
+            following: true,
+            followedBy: true
           }
         }
       }
@@ -31,7 +33,7 @@ export class UserService {
         verificationStatus: true,
         createdAt: true,
         _count: {
-            select: { posts: true }
+            select: { posts: true, following: true, followedBy: true }
         }
       }
     });
@@ -58,5 +60,27 @@ export class UserService {
     });
 
     return user;
+  }
+
+  async followUser(followerId: string, followingId: string) {
+      if (followerId === followingId) throw new Error('Cannot follow yourself');
+
+      return await prisma.follow.create({
+          data: {
+              followerId,
+              followingId
+          }
+      });
+  }
+
+  async unfollowUser(followerId: string, followingId: string) {
+      return await prisma.follow.delete({
+          where: {
+              followerId_followingId: {
+                  followerId,
+                  followingId
+              }
+          }
+      });
   }
 }

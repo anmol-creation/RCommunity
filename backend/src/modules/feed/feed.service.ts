@@ -2,16 +2,25 @@ import prisma from '../../utils/prisma';
 
 export class FeedService {
 
-  async getFeed(userId?: string, page: number = 1, limit: number = 20) {
+  async getFeed(userId?: string, page: number = 1, limit: number = 20, sortBy: 'latest' | 'trending' = 'latest') {
     const skip = (page - 1) * limit;
+
+    // Sort logic
+    let orderBy: any = { createdAt: 'desc' };
+
+    if (sortBy === 'trending') {
+        orderBy = {
+            likes: {
+                _count: 'desc'
+            }
+        };
+    }
 
     // Fetch posts
     const posts = await prisma.post.findMany({
       skip,
       take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: orderBy,
       include: {
         author: {
           select: {
@@ -19,6 +28,11 @@ export class FeedService {
             displayName: true,
             verificationStatus: true,
             role: true,
+            // Check if I follow this author
+            followedBy: userId ? {
+                where: { followerId: userId },
+                select: { followerId: true }
+            } : false
           },
         },
         _count: {
@@ -35,11 +49,16 @@ export class FeedService {
       },
     });
 
-    // Transform to add 'likedByMe'
+    // Transform
     return posts.map(post => ({
       ...post,
       likedByMe: post.likes && post.likes.length > 0,
-      likes: undefined // cleanup
+      isFollowing: post.author.followedBy && post.author.followedBy.length > 0,
+      likes: undefined,
+      author: {
+          ...post.author,
+          followedBy: undefined
+      }
     }));
   }
 

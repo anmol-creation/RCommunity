@@ -1,9 +1,9 @@
 import api from './api';
 
 export const FeedService = {
-  getFeed: async (page: number = 1) => {
+  getFeed: async (page: number = 1, sortBy: 'latest' | 'trending' = 'latest') => {
     try {
-      const response = await api.get(`/feed?page=${page}`);
+      const response = await api.get(`/feed?page=${page}&sortBy=${sortBy}`);
       return response.data.data;
     } catch (error) {
       console.error('FeedService getFeed error:', error);

@@ -21,17 +21,15 @@ const ProfileScreen = () => {
     try {
       const currentUser = await AuthService.getCurrentUser();
 
-      if (currentUser && currentUser.verificationStatus) { // Basic check if valid user object
+      if (currentUser && currentUser.verificationStatus) {
          const data = await UserService.getMyProfile();
          setProfile(data);
          setIsVisitor(false);
       } else {
-         // Visitor Mode
          setIsVisitor(true);
          setProfile(null);
       }
     } catch (error) {
-      // If 401, likely session expired or visitor
       console.log('Profile Load Error', error);
       setIsVisitor(true);
     } finally {
@@ -84,6 +82,17 @@ const ProfileScreen = () => {
         <Text style={styles.name}>{profile?.displayName || 'Rider'}</Text>
         <Text style={styles.phone}>{profile?.phoneNumber}</Text>
 
+        <View style={styles.followStats}>
+            <View style={styles.followBox}>
+                <Text style={styles.followCount}>{profile?._count?.following || 0}</Text>
+                <Text style={styles.followLabel}>Following</Text>
+            </View>
+            <View style={styles.followBox}>
+                <Text style={styles.followCount}>{profile?._count?.followedBy || 0}</Text>
+                <Text style={styles.followLabel}>Followers</Text>
+            </View>
+        </View>
+
         <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfile', { profile })}>
             <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>
@@ -117,11 +126,6 @@ const ProfileScreen = () => {
                   <Text style={styles.emptyText}>No platforms added yet.</Text>
               )}
           </View>
-      </View>
-
-      <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Activity</Text>
-          <Text style={styles.emptyText}>Recent posts will appear here.</Text>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -186,6 +190,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     marginBottom: 10,
+  },
+  followStats: {
+      flexDirection: 'row',
+      marginVertical: 10,
+  },
+  followBox: {
+      alignItems: 'center',
+      marginHorizontal: 15,
+  },
+  followCount: {
+      color: '#FFF',
+      fontSize: 16,
+      fontWeight: 'bold',
+  },
+  followLabel: {
+      color: '#888',
+      fontSize: 12,
   },
   editButton: {
       marginTop: 10,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { UserService } from '../../services/user.service';
 
 interface Author {
   id: string;
@@ -14,6 +15,7 @@ export interface Post {
   createdAt: string;
   author: Author;
   likedByMe?: boolean;
+  isFollowing?: boolean;
   _count: {
     likes: number;
     comments: number;
@@ -27,6 +29,17 @@ interface PostItemProps {
 }
 
 export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
+
+  // Simple local follow stub for now (Post doesn't update optimistic follow yet)
+  const handleFollow = async () => {
+      try {
+          await UserService.followUser(post.author.id);
+          Alert.alert('Success', `You are now following ${post.author.displayName}`);
+      } catch (e) {
+          Alert.alert('Error', 'Could not follow user (or already following)');
+      }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -40,8 +53,13 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) =
             </Text>
           </View>
         </View>
-        {/* Simple date formatter stub */}
-        <Text style={styles.timeAgo}>{new Date(post.createdAt).toLocaleDateString()}</Text>
+
+        {/* Follow Button (if not following and verified) */}
+        {!post.isFollowing && post.author.verificationStatus === 'VERIFIED' && (
+            <TouchableOpacity onPress={handleFollow} style={styles.followButton}>
+                <Text style={styles.followText}>+ Follow</Text>
+            </TouchableOpacity>
+        )}
       </View>
 
       {/* Content */}
@@ -112,6 +130,18 @@ const styles = StyleSheet.create({
     color: '#4DB6AC',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  followButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderWidth: 1,
+      borderColor: '#4FA5F5',
+      borderRadius: 15,
+  },
+  followText: {
+      color: '#4FA5F5',
+      fontSize: 12,
+      fontWeight: 'bold',
   },
   timeAgo: {
     color: '#888',

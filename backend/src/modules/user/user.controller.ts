@@ -45,4 +45,32 @@ export class UserController {
           res.status(500).json({ success: false, message: 'Failed to fetch user' });
       }
   }
+
+  async followUser(req: Request, res: Response) {
+      try {
+          const { id } = req.params; // target user id
+          const user = req.user;
+          if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+          await userService.followUser(user.id, id);
+          res.json({ success: true, message: 'Followed successfully' });
+      } catch (error) {
+          console.error('Follow Error:', error);
+          res.status(500).json({ success: false, message: 'Failed to follow user' });
+      }
+  }
+
+  async unfollowUser(req: Request, res: Response) {
+      try {
+          const { id } = req.params; // target user id
+          const user = req.user;
+          if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+          await userService.unfollowUser(user.id, id);
+          res.json({ success: true, message: 'Unfollowed successfully' });
+      } catch (error) {
+          console.error('Unfollow Error:', error);
+          res.status(500).json({ success: false, message: 'Failed to unfollow user' });
+      }
+  }
 }
