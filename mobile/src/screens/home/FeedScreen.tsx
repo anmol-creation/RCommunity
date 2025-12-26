@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FeedService } from '../../services/feed.service';
 import { AuthService } from '../../services/auth.service';
-import { PostItem } from './PostItem';
+import { PostItem, Post } from './PostItem';
 
 const FeedScreen = () => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const navigation = useNavigation();
@@ -18,9 +18,12 @@ const FeedScreen = () => {
     }, [])
   );
 
-  useEffect(() => {
-    fetchFeed();
-  }, []);
+  // Reload feed on focus to get fresh likes/comments counts
+  useFocusEffect(
+      useCallback(() => {
+        fetchFeed();
+      }, [])
+  );
 
   const loadUser = async () => {
     const currentUser = await AuthService.getCurrentUser();
@@ -29,11 +32,12 @@ const FeedScreen = () => {
 
   const fetchFeed = async () => {
     try {
-      setLoading(true);
+      // Don't set loading true on refresh to avoid flickering if we just want to update data
+      // setLoading(true);
       const data = await FeedService.getFeed();
       setPosts(data);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load feed');
+      console.log('Error loading feed', error);
     } finally {
       setLoading(false);
     }
@@ -45,7 +49,6 @@ const FeedScreen = () => {
       return;
     }
 
-    // We check locally, but backend also enforces it.
     if (user.verificationStatus !== 'VERIFIED') {
         Alert.alert('Verification Required', 'Only verified riders can post.');
         return;
@@ -54,7 +57,44 @@ const FeedScreen = () => {
     navigation.navigate('CreatePost');
   };
 
-  if (loading) {
+  const handleLike = async (postId: string) => {
+    if (!user || user.verificationStatus !== 'VERIFIED') {
+        Alert.alert('Restricted', 'Only verified riders can like posts.');
+        return;
+    }
+
+    // Optimistic Update
+    setPosts(currentPosts =>
+        currentPosts.map(p => {
+            if (p.id === postId) {
+                const wasLiked = p.likedByMe;
+                return {
+                    ...p,
+                    likedByMe: !wasLiked,
+                    _count: {
+                        ...p._count,
+                        likes: wasLiked ? p._count.likes - 1 : p._count.likes + 1
+                    }
+                };
+            }
+            return p;
+        })
+    );
+
+    try {
+        await FeedService.toggleLike(postId);
+    } catch (error) {
+        // Revert on error
+        fetchFeed();
+        Alert.alert('Error', 'Failed to update like');
+    }
+  };
+
+  const handleComment = (post: Post) => {
+      navigation.navigate('Comments', { postId: post.id });
+  };
+
+  if (loading && posts.length === 0) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color="#4DB6AC" />
@@ -81,10 +121,16 @@ const FeedScreen = () => {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PostItem post={item} />}
+        renderItem={({ item }) => (
+            <PostItem
+                post={item}
+                onLike={handleLike}
+                onComment={handleComment}
+            />
+        )}
         contentContainerStyle={styles.listContent}
         refreshing={loading}
-        onRefresh={fetchFeed}
+        onRefresh={() => { setLoading(true); fetchFeed(); }}
         ListEmptyComponent={
             <View style={styles.center}>
                 <Text style={styles.emptyText}>No posts yet. Be the first!</Text>

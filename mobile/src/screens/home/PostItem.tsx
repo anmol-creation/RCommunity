@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface Author {
   id: string;
@@ -7,12 +7,13 @@ interface Author {
   verificationStatus: string;
 }
 
-interface Post {
+export interface Post {
   id: string;
   content: string;
   imageUrl?: string | null;
   createdAt: string;
   author: Author;
+  likedByMe?: boolean;
   _count: {
     likes: number;
     comments: number;
@@ -21,9 +22,11 @@ interface Post {
 
 interface PostItemProps {
   post: Post;
+  onLike?: (postId: string) => void;
+  onComment?: (post: Post) => void;
 }
 
-export const PostItem: React.FC<PostItemProps> = ({ post }) => {
+export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -37,7 +40,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
             </Text>
           </View>
         </View>
-        <Text style={styles.timeAgo}>Just now</Text>
+        {/* Simple date formatter stub */}
+        <Text style={styles.timeAgo}>{new Date(post.createdAt).toLocaleDateString()}</Text>
       </View>
 
       {/* Content */}
@@ -51,12 +55,16 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
 
       {/* Footer (Interactions) */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>👍 {post._count.likes}</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={() => onLike && onLike(post.id)}>
+          <Text style={[styles.actionText, post.likedByMe && styles.likedText]}>
+             {post.likedByMe ? '👍 Liked' : '👍 Like'} {post._count.likes}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>💬 {post._count.comments}</Text>
+
+        <TouchableOpacity style={styles.actionButton} onPress={() => onComment && onComment(post)}>
+          <Text style={styles.actionText}>💬 Comment {post._count.comments}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
@@ -133,10 +141,15 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 5,
   },
   actionText: {
     color: '#BBB',
     fontSize: 14,
     marginLeft: 5,
   },
+  likedText: {
+      color: '#4DB6AC',
+      fontWeight: 'bold',
+  }
 });

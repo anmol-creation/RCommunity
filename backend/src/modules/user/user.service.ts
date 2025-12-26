@@ -1,14 +1,10 @@
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
+import prisma from '../../utils/prisma';
 
 export class UserService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         _count: {
@@ -24,7 +20,7 @@ export class UserService {
 
   async getUserById(userId: string) {
     // Public profile view - strict selection
-    const user = await this.prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -56,7 +52,7 @@ export class UserService {
       (allowedUpdates as any)[key] === undefined && delete (allowedUpdates as any)[key]
     );
 
-    const user = await this.prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: userId },
       data: allowedUpdates,
     });
