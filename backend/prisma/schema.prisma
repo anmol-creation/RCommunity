@@ -30,9 +30,25 @@ model User {
   likes           Like[]
   verificationRequest VerificationRequest?
   reports         Report[]
+  refreshTokens   RefreshToken[]
 
   followedBy      Follow[] @relation("following")
   following       Follow[] @relation("follower")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  replacedByToken String?
+
+  // Security
+  deviceHash String?
+  ipAddress  String?
 }
 
 model Follow {

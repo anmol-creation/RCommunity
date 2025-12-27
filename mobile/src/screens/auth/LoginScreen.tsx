@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 import { AuthService } from '../../services/auth.service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // @ts-ignore
 const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!phoneNumber) {
@@ -14,20 +14,34 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
+    if (phoneNumber.length < 10) {
+        Alert.alert('Error', 'Please enter a valid phone number');
+        return;
+    }
+
+    if (isLoading) return;
+
+    setIsLoading(true);
     try {
       await AuthService.requestOTP(phoneNumber);
+      setIsLoading(false);
       navigation.navigate('OTP', { phoneNumber });
     } catch (error) {
-      Alert.alert('Error', 'Failed to request OTP. Check your network.');
+      setIsLoading(false);
+      Alert.alert('Error', 'Failed to request OTP. Please check your connection and try again.');
     }
   };
 
   const handleVisitorAccess = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     // Clear any existing session to ensure we are truly a visitor
     await AuthService.logout();
 
-    // Navigate to the 'AppTabs' screen which is defined in the RootNavigator
-    // We use dispatch with reset to clear the history so the user can't go back to login
+    setIsLoading(false);
+
+    // Navigate to the 'AppTabs' screen
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
@@ -37,66 +51,119 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to R Community</Text>
-      <Text style={styles.subtitle}>The dedicated space for Riders</Text>
+    <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.container}
+        >
+          <View style={styles.contentContainer}>
+              <Text style={styles.title}>R Community</Text>
+              <Text style={styles.subtitle}>The dedicated space for Riders</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Mobile Number"
-        placeholderTextColor="#999"
-        keyboardType="phone-pad"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
-      />
+              <View style={styles.formContainer}>
+                  <Text style={styles.label}>Mobile Number</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 9876543210"
+                    placeholderTextColor="#666"
+                    keyboardType="phone-pad"
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    maxLength={10}
+                  />
 
-      <Button title="Get OTP" onPress={handleLogin} />
+                  <TouchableOpacity
+                    style={[styles.button, isLoading && styles.buttonDisabled]}
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Get OTP</Text>
+                    )}
+                  </TouchableOpacity>
+              </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.link} onPress={handleVisitorAccess}>
-          Continue as Visitor
-        </Text>
-      </View>
-    </View>
+              <View style={styles.footer}>
+                <TouchableOpacity onPress={handleVisitorAccess} disabled={isLoading}>
+                    <Text style={styles.link}>Continue as Visitor</Text>
+                </TouchableOpacity>
+              </View>
+          </View>
+        </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
   container: {
     flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#121212', // Dark mode background
+    padding: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#bbb',
-    marginBottom: 30,
+    color: '#aaa',
+    marginBottom: 48,
     textAlign: 'center',
+  },
+  formContainer: {
+      marginBottom: 24,
+  },
+  label: {
+      color: '#ddd',
+      marginBottom: 8,
+      fontSize: 14,
+      fontWeight: '500',
   },
   input: {
     backgroundColor: '#1E1E1E',
     color: '#fff',
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 24,
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#333',
   },
+  button: {
+      backgroundColor: '#2196F3',
+      paddingVertical: 14,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+  },
+  buttonDisabled: {
+      backgroundColor: '#1565C0',
+      opacity: 0.7,
+  },
+  buttonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+  },
   footer: {
-    marginTop: 20,
     alignItems: 'center',
   },
   link: {
-    color: '#4FA5F5',
+    color: '#64B5F6', // Light blue
+    fontSize: 16,
     textDecorationLine: 'underline',
   },
 });
