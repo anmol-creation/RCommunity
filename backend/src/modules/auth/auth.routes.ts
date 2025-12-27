@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { AuthController } from './auth.controller';
+import * as authController from './auth.controller';
+import { rateLimiter } from '../../middleware/rateLimit.middleware';
 
 const router = Router();
-const authController = new AuthController();
 
-// Bind methods to controller context
-router.post('/login', (req, res) => authController.login(req, res));
-router.post('/verify', (req, res) => authController.verifyOTP(req, res));
+// Apply rate limiting to auth routes
+router.use(rateLimiter);
+
+router.post('/login', authController.requestOTP);
+router.post('/verify', authController.verifyOTP);
+router.post('/refresh', authController.refreshToken);
+router.post('/logout', authController.logout);
 
 export default router;
